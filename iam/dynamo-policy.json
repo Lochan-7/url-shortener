@@ -1,0 +1,12 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": [
+      "dynamodb:PutItem",
+      "dynamodb:GetItem",
+      "dynamodb:UpdateItem"
+    ],
+    "Resource": "arn:aws:dynamodb:ap-southeast-1:794692801848:table/urlshort-links"
+  }]
+}

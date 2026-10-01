@@ -1,0 +1,14 @@
+# AWS credentials and keys
+*.pem
+*.ppk
+.aws/
+credentials
+# Local scratch
+response.json
+test-*.json
+# OS
+.DS_Store
+Thumbs.db
+# Zip bundles
+function.zip
+*.zip

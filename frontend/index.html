@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shortr — URL Shortener</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #0a0a0f;
+      color: white;
+      font-family: "Inter", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(131, 56, 236, 0.2), transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(58, 134, 255, 0.2), transparent 40%);
+      z-index: 0;
+      pointer-events: none;
+      animation: shimmer 10s ease-in-out infinite;
+    }
+    @keyframes shimmer { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 560px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .logo {
+      font-size: 3rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      margin: 0 0 8px;
+      background: linear-gradient(90deg, #8338ec, #3a86ff, #06ffa5, #8338ec);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shine 4s linear infinite;
+    }
+    @keyframes shine { to { background-position: 200% center; } }
+
+    .subtitle {
+      color: #a0a0b8;
+      font-size: 1rem;
+      margin: 0 0 40px;
+      letter-spacing: 1px;
+    }
+
+    .card {
+      background: rgba(26, 26, 46, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 28px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .input {
+      padding: 16px 20px;
+      font-family: inherit;
+      font-size: 1rem;
+      background: #0a0a0f;
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .input:focus { border-color: #8338ec; }
+    .input::placeholder { color: #4a4a60; }
+
+    .btn {
+      padding: 16px 28px;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: white;
+      background: linear-gradient(90deg, #8338ec, #3a86ff, #06ffa5, #8338ec);
+      background-size: 200% auto;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.15s;
+      animation: shine 4s linear infinite;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn:disabled { opacity: 0.6; cursor: wait; }
+
+    .result {
+      margin-top: 24px;
+      padding: 16px;
+      background: rgba(10, 10, 15, 0.6);
+      border: 1px solid rgba(6, 255, 165, 0.3);
+      border-radius: 12px;
+      text-align: left;
+      display: none;
+    }
+    .result.show { display: block; }
+    .result-label {
+      color: #06ffa5;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    .result-url {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .result-url input {
+      flex: 1;
+      padding: 12px 14px;
+      background: #0a0a0f;
+      color: #06ffa5;
+      border: 1px solid rgba(6, 255, 165, 0.2);
+      border-radius: 8px;
+      font-family: "Consolas", monospace;
+      font-size: 0.9rem;
+    }
+    .copy-btn {
+      padding: 12px 18px;
+      background: #06ffa5;
+      color: #0a0a0f;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .copy-btn:hover { background: #04c683; }
+    .copy-btn.copied { background: #3a86ff; color: white; }
+
+    .error {
+      margin-top: 20px;
+      padding: 14px;
+      background: rgba(255, 107, 107, 0.1);
+      border: 1px solid rgba(255, 107, 107, 0.3);
+      border-radius: 10px;
+      color: #ff6b6b;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .error.show { display: block; }
+
+    footer {
+      margin-top: 32px;
+      color: #4a4a60;
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+    }
+    footer a {
+      color: #8338ec;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="logo">SHORTR</h1>
+    <p class="subtitle">Make long links tiny.</p>
+
+    <div class="card">
+      <form class="form" onsubmit="shortenURL(event)">
+        <input id="url-input" class="input" type="url" placeholder="https://your-really-long-url.com/with/stuff" required>
+        <button id="submit-btn" class="btn" type="submit">SHORTEN</button>
+      </form>
+
+      <div id="result" class="result">
+        <div class="result-label">Your short URL</div>
+        <div class="result-url">
+          <input id="short-url" type="text" readonly>
+          <button class="copy-btn" onclick="copyShort()">COPY</button>
+        </div>
+      </div>
+
+      <div id="error" class="error"></div>
+    </div>
+
+    <footer>Powered by AWS Lambda &middot; DynamoDB &middot; API Gateway</footer>
+  </div>
+
+  <script>
+    const API_BASE = "https://80dae8r7p9.execute-api.ap-southeast-1.amazonaws.com";
+
+    async function shortenURL(e) {
+      e.preventDefault();
+      const btn = document.getElementById("submit-btn");
+      const input = document.getElementById("url-input");
+      const result = document.getElementById("result");
+      const err = document.getElementById("error");
+
+      result.classList.remove("show");
+      err.classList.remove("show");
+      btn.disabled = true;
+      btn.textContent = "SHORTENING...";
+
+      try {
+        const resp = await fetch(API_BASE + "/shorten", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ long_url: input.value.trim() })
+        });
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          throw new Error(data.error || "Something went wrong");
+        }
+
+        const shortURL = API_BASE + "/" + data.short_id;
+        document.getElementById("short-url").value = shortURL;
+        result.classList.add("show");
+      } catch (ex) {
+        err.textContent = "Error: " + ex.message;
+        err.classList.add("show");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "SHORTEN";
+      }
+    }
+
+    function copyShort() {
+      const input = document.getElementById("short-url");
+      input.select();
+      input.setSelectionRange(0, 99999);
+      navigator.clipboard.writeText(input.value).then(() => {
+        const btn = document.querySelector(".copy-btn");
+        btn.textContent = "COPIED!";
+        btn.classList.add("copied");
+        setTimeout(() => {
+          btn.textContent = "COPY";
+          btn.classList.remove("copied");
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>
